@@ -25,7 +25,7 @@ Streakify is a Spring Boot REST API for tracking habits, daily completion logs, 
 ## Project Structure
 
 ```text
-src/main/java/com/streak/Streakify1/
+src/main/java/com/streak/Streakify/
   controller/    # REST controllers
   DTO/           # Request and response DTOs
   entity/        # JPA entities
