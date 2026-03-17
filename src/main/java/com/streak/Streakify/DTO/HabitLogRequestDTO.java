@@ -16,7 +16,7 @@ import java.time.LocalDate;
 public class HabitLogRequestDTO {
 
     @NotNull(message = "logDate is required")
-    @PastOrPresent(message = "logDate cannot be in the future")
+    @PastOrPresent(message = "Future dates cannot be logged")
     private LocalDate logDate;
     @NotNull(message = "completed is required")
     private Boolean completed;
