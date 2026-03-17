@@ -310,11 +310,7 @@ Response (400):
 }
 ```
 
-## Screenshots
-
-> Placeholders below reference existing images from the `image/` folder.
-
-### API / Project Screens
+## Screenshots (API / Project Screens)
 
 ![Screenshot 1](image/img.png)
 ![Screenshot 2](image/img_0.png)
