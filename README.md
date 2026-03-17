@@ -1,93 +1,96 @@
 # Streakify
 
-Streakify is a Spring Boot REST API for tracking habits, daily completion logs, and streak progress.
-
-## Features
-
-- User management
-- Habit creation and listing by user
-- Habit log creation and updates by date
-- Streak calculation per habit
-- Dashboard summary per user
-- Request validation and centralized error handling
+Streakify is a Spring Boot habit-tracking backend API that helps users create habits, log daily progress, and monitor streak consistency.
 
 ## Tech Stack
 
 - Java 17
-- Spring Boot
-- Spring Web MVC
-- Spring Data JPA
-- Bean Validation (Jakarta Validation)
+- Spring Boot (Web MVC, Validation, Data JPA)
 - PostgreSQL
-- Lombok
-- Maven
+- Maven Wrapper (`mvnw` / `mvnw.cmd`)
 
-## Project Structure
+## Setup Steps
 
-```text
-src/main/java/com/streak/Streakify/
-  controller/    # REST controllers
-  DTO/           # Request and response DTOs
-  entity/        # JPA entities
-  repository/    # Spring Data repositories
-  service/       # Business logic
-  exception/     # Custom exceptions and global handler
+### 1. Clone and open project
+
+```bash
+git clone https://github.com/25hency/Streakify.git
+cd Streakify
 ```
 
-## Prerequisites
-
-- JDK 17 installed
-- PostgreSQL installed and running
-- Maven (or use the included Maven Wrapper)
-
-## Configuration
-
-Current application config is in src/main/resources/application.properties:
-
-- app name: `Streakify`
-- server port: `8080`
-- datasource URL: `jdbc:postgresql://localhost:5000/streakify_db`
-- datasource username: `<your_db_username>`
-- datasource password: `<your_db_password>`
-- hibernate ddl-auto: `update`
-
-Do not commit real credentials to GitHub. Keep secrets in local-only config or environment variables.
-
-Supported environment variables:
-
-- `DB_URL`
-- `DB_USERNAME`
-- `DB_PASSWORD`
-
-## Run Locally
-
-### 1) Create database
-
-Use PostgreSQL and create the database:
+### 2. Create PostgreSQL database
 
 ```sql
 CREATE DATABASE streakify_db;
 ```
 
-### 2) Run the app
+### 3. Configure environment variables
 
-On Windows:
+The app reads DB credentials from environment variables in `application.properties`:
 
-```bash
-mvnw.cmd spring-boot:run
+- `DB_URL` (default: `jdbc:postgresql://localhost:5000/streakify_db`)
+- `DB_USERNAME` (default: `postgres`)
+- `DB_PASSWORD` (default: empty)
+
+On Windows PowerShell (current session):
+
+```powershell
+$env:DB_URL="jdbc:postgresql://localhost:5432/streakify_db"
+$env:DB_USERNAME="postgres"
+$env:DB_PASSWORD="your_password"
 ```
 
-On macOS/Linux:
+### 4. Run the application
+
+Windows:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+macOS/Linux:
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-App base URL:
+The API starts on:
 
-```text
-http://localhost:8080
+- `http://localhost:8080`
+
+### 5. Run tests
+
+Windows:
+
+```powershell
+.\mvnw.cmd test
 ```
+
+macOS/Linux:
+
+```bash
+./mvnw test
+```
+
+## DB Configuration
+
+Configured in `src/main/resources/application.properties`:
+
+```properties
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5000/streakify_db}
+spring.datasource.username=${DB_USERNAME:postgres}
+spring.datasource.password=${DB_PASSWORD:}
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+```
+
+Notes:
+
+- `ddl-auto=update` automatically creates/updates tables from JPA entities.
+- For production, use a stricter migration strategy (Flyway/Liquibase + `validate`).
+- `HabitLog` has a unique constraint on `(habit_id, log_date)`.
 
 ## API Endpoints
 
@@ -96,28 +99,40 @@ http://localhost:8080
 - `POST /users` - Create user
 - `GET /users/{id}` - Get user by id
 - `DELETE /users/{id}` - Delete user
-- `GET /users/{userId}/dashboard` - Get dashboard for user
+- `GET /users/{userId}/dashboard` - Get dashboard summary
 
 ### Habits
 
 - `POST /habits` - Create habit
-- `GET /users/{userId}/habits` - List habits for a user
+- `GET /users/{userId}/habits` - List habits for user
 - `DELETE /habits/{id}` - Delete habit
-- `GET /habits/{habitId}/streak` - Get streak details for a habit
 
 ### Habit Logs
 
 - `POST /habits/{habitId}/logs` - Create habit log
-- `PUT /habits/{habitId}/logs/{date}` - Update habit log by date
-- `GET /habits/{habitId}/logs` - Get all logs for a habit
+- `PUT /habits/{habitId}/logs/{date}` - Update log by date
+- `GET /habits/{habitId}/logs` - List habit logs
 
-## Preview
+### Streak
 
-![Streakify Dashboard Preview](image/img.png)
+- `GET /habits/{habitId}/streak` - Get current and longest streak
 
-## Sample Request Payloads
+## Sample Requests/Responses
 
-Create user:
+Base URL:
+
+```text
+http://localhost:8080
+```
+
+### 1. Create User
+
+Request:
+
+```http
+POST /users
+Content-Type: application/json
+```
 
 ```json
 {
@@ -126,17 +141,54 @@ Create user:
 }
 ```
 
-Create habit:
+Response (200):
 
 ```json
 {
-  "name": "Read",
+  "id": 1,
+  "name": "Hency",
+  "email": "hency@example.com",
+  "createdAt": "2026-03-17T12:30:10.455"
+}
+```
+
+### 2. Create Habit
+
+Request:
+
+```http
+POST /habits
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "Morning Run",
   "targetDaysPerWeek": 5,
   "userId": 1
 }
 ```
 
-Create or update habit log:
+Response (200):
+
+```json
+{
+  "id": 1,
+  "name": "Morning Run",
+  "targetDaysPerWeek": 5,
+  "userId": 1,
+  "created_at": "2026-03-17T12:33:22.914"
+}
+```
+
+### 3. Create Habit Log
+
+Request:
+
+```http
+POST /habits/1/logs
+Content-Type: application/json
+```
 
 ```json
 {
@@ -145,19 +197,155 @@ Create or update habit log:
 }
 ```
 
-## Testing
+Response (200):
 
-Run tests with Maven Wrapper:
-
-```bash
-mvnw.cmd test
+```json
+{
+  "id": 1,
+  "habitId": 1,
+  "logDate": "2026-03-17",
+  "completed": true
+}
 ```
 
-## Notes
+### 4. Update Habit Log
 
-- The app uses automatic schema updates (`spring.jpa.hibernate.ddl-auto=update`).
-- Validation errors and not-found scenarios are handled through custom exception classes.
+Request:
 
-## License
+```http
+PUT /habits/1/logs/2026-03-17
+Content-Type: application/json
+```
 
-No license file is currently defined. Add a LICENSE file if you plan to open-source this project.
+```json
+{
+  "logDate": "2026-03-17",
+  "completed": false
+}
+```
+
+Response (200):
+
+```json
+{
+  "id": 1,
+  "habitId": 1,
+  "logDate": "2026-03-17",
+  "completed": false
+}
+```
+
+### 5. Get User Dashboard
+
+Request:
+
+```http
+GET /users/1/dashboard
+```
+
+Response (200):
+
+```json
+{
+  "totalHabits": 2,
+  "activeHabits": 2,
+  "completedToday": 1,
+  "currentStreaks": [
+    {
+      "habitName": "Morning Run",
+      "currentStreak": 3,
+      "longestStreak": 5
+    },
+    {
+      "habitName": "Read 20 Minutes",
+      "currentStreak": 1,
+      "longestStreak": 2
+    }
+  ],
+  "consistencyScore": "75.0%"
+}
+```
+
+### 6. Get Streak
+
+Request:
+
+```http
+GET /habits/1/streak
+```
+
+Response (200):
+
+```json
+{
+  "currentStreak": 3,
+  "longestStreak": 5
+}
+```
+
+### 7. Sample Error Response (Validation)
+
+Request:
+
+```http
+POST /users
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "",
+  "email": "not-an-email"
+}
+```
+
+Response (400):
+
+```json
+{
+  "timestamp": "2026-03-17T13:02:49.611",
+  "status": 400,
+  "error": "Validation Error",
+  "message": "Name is required"
+}
+```
+
+## Screenshots
+
+> Placeholders below reference existing images from the `image/` folder.
+
+### API / Project Screens
+
+![Screenshot 1](image/img.png)
+![Screenshot 2](image/img_0.png)
+![Screenshot 5](image/img_4.png)
+![Screenshot 8](image/img_8.png)
+
+### Additional Screens
+
+![Screenshot 12](image/img_10.png)
+![Screenshot 13](image/img_11.png)
+
+## Quick cURL Examples
+
+Create user:
+
+```bash
+curl -X POST http://localhost:8080/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Hency","email":"hency@example.com"}'
+```
+
+Create habit:
+
+```bash
+curl -X POST http://localhost:8080/habits \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Morning Run","targetDaysPerWeek":5,"userId":1}'
+```
+
+Get streak:
+
+```bash
+curl http://localhost:8080/habits/1/streak
+```
